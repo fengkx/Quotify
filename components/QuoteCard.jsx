@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -29,7 +29,7 @@ const QuoteCard = ({ quote, author, tags = [], onNewQuote, loading, isOffline })
   };
 
   // Check if current quote is favorited
-  const checkIfFavorite = async () => {
+  const checkIfFavorite = useCallback(async () => {
     try {
       const quoteKey = getQuoteKey(quote, author);
       const favorites = await AsyncStorage.getItem('favoriteQuotes');
@@ -39,7 +39,7 @@ const QuoteCard = ({ quote, author, tags = [], onNewQuote, loading, isOffline })
     } catch (error) {
       console.error('Error checking favorite status:', error);
     }
-  };
+  }, [author, quote]);
 
   // Toggle favorite status
   const toggleFavorite = async () => {
@@ -111,7 +111,7 @@ const QuoteCard = ({ quote, author, tags = [], onNewQuote, loading, isOffline })
     if (quote && author) {
       checkIfFavorite();
     }
-  }, [quote, author]);
+  }, [author, checkIfFavorite, quote]);
 
   const copyToClipboard = async () => {
     try {
@@ -211,7 +211,7 @@ const QuoteCard = ({ quote, author, tags = [], onNewQuote, loading, isOffline })
           <View style={styles.tagsContainer}>
             <View style={styles.tagsScrollView}>
               {tags.slice(0, 3).map((tag, index) => (
-                <View key={tag} style={styles.tagChip}>
+                <View key={`${tag}-${index}`} style={styles.tagChip}>
                   <Text style={styles.tagText}>{tag}</Text>
                 </View>
               ))}

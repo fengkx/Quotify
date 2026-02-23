@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -13,6 +13,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import QuoteCard from './QuoteCard';
 import FavoritesScreen from './FavoritesScreen';
 import CategoryFilter from './CategoryFilter';
+import DataSourceSettings from './DataSourceSettings';
 import WidgetService from '../services/WidgetService';
 import QuoteService from '../services/QuoteService';
 
@@ -24,16 +25,31 @@ const QuoteGenerator = () => {
   const [currentScreen, setCurrentScreen] = useState('main'); // 'main' or 'favorites'
   const [selectedTags, setSelectedTags] = useState([]);
   const [showCategoryFilter, setShowCategoryFilter] = useState(false);
+  const [showDataSourceSettings, setShowDataSourceSettings] = useState(false);
+  const [datasetVersion, setDatasetVersion] = useState(0);
+  const [sourceInfo, setSourceInfo] = useState(QuoteService.getSourceInfo());
+  const hasHandledSelectedTagsEffect = useRef(false);
 
-  const fetchRandomQuote = async () => {
+  const reconcileSelectedTags = (candidateTags = selectedTags) => {
+    const availableTags = new Set(QuoteService.getAllTags());
+    const nextTags = (candidateTags || []).filter(tag => availableTags.has(tag));
+
+    if (nextTags.length !== selectedTags.length) {
+      setSelectedTags(nextTags);
+    }
+
+    return nextTags;
+  };
+
+  const fetchRandomQuote = useCallback(async (activeTags = []) => {
     setLoading(true);
     try {
-      console.log('Fetching quote from local JSON file...');
+      console.log('Fetching quote from active quote source...');
       
-      // Get random quote from local JSON file, filtered by selected tags if any
+      // Get random quote from active source, filtered by selected tags if any
       let quoteData;
-      if (selectedTags.length > 0) {
-        quoteData = QuoteService.getRandomQuoteByTags(selectedTags);
+      if (activeTags.length > 0) {
+        quoteData = QuoteService.getRandomQuoteByTags(activeTags);
         console.log('Quote data received (filtered):', quoteData);
       } else {
         quoteData = QuoteService.getRandomQuote();
@@ -48,9 +64,9 @@ const QuoteGenerator = () => {
         // Update widget with new quote
         await WidgetService.updateWidgetData();
       } else {
-        throw new Error(selectedTags.length > 0 
+        throw new Error(activeTags.length > 0 
           ? 'No quotes found for the selected categories. Try selecting different categories or clear all filters.'
-          : 'No valid quote data received from local file'
+          : 'No valid quote data received from the current source'
         );
       }
     } catch (error) {
@@ -64,22 +80,89 @@ const QuoteGenerator = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleNewQuote = async () => {
-    fetchRandomQuote();
-  };
-
-  useEffect(() => {
-    fetchRandomQuote();
   }, []);
 
+  const handleNewQuote = async () => {
+    fetchRandomQuote(selectedTags);
+  };
+
+  const applySourceChange = async (action) => {
+    await action();
+    const nextSourceInfo = QuoteService.getSourceInfo();
+    setSourceInfo(nextSourceInfo);
+    setDatasetVersion(prev => prev + 1);
+
+    const nextTags = reconcileSelectedTags(selectedTags);
+    await fetchRandomQuote(nextTags);
+  };
+
+  const handleApplyEndpoint = async (endpoint) => {
+    await applySourceChange(() => QuoteService.setCustomEndpoint(endpoint));
+  };
+
+  const handleRefreshSource = async () => {
+    await applySourceChange(() => QuoteService.refreshCustomEndpoint());
+  };
+
+  const handleUseBuiltInSource = async () => {
+    await applySourceChange(() => QuoteService.clearCustomEndpoint());
+  };
+
   useEffect(() => {
-    // Refetch quote when selected tags change
-    if (quote && author) {
-      fetchRandomQuote();
+    let unsubscribe;
+    let mounted = true;
+
+    const initialize = async () => {
+      try {
+        await QuoteService.initialize();
+      } catch (error) {
+        console.error('QuoteService initialization error:', error);
+      } finally {
+        if (!mounted) {
+          return;
+        }
+
+        setSourceInfo(QuoteService.getSourceInfo());
+        setDatasetVersion(prev => prev + 1);
+        fetchRandomQuote([]);
+      }
+    };
+
+    unsubscribe = QuoteService.subscribe(event => {
+      if (!mounted) {
+        return;
+      }
+
+      if (event?.sourceInfo) {
+        setSourceInfo(event.sourceInfo);
+      } else {
+        setSourceInfo(QuoteService.getSourceInfo());
+      }
+
+      if (event?.type === 'datasetChanged') {
+        setDatasetVersion(prev => prev + 1);
+      }
+    });
+
+    initialize();
+
+    return () => {
+      mounted = false;
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [fetchRandomQuote]);
+
+  useEffect(() => {
+    // Skip first render; initial quote load is handled by initialize().
+    if (!hasHandledSelectedTagsEffect.current) {
+      hasHandledSelectedTagsEffect.current = true;
+      return;
     }
-  }, [selectedTags]);
+
+    fetchRandomQuote(selectedTags);
+  }, [fetchRandomQuote, selectedTags]);
 
   return (
     <View style={[styles.container, currentScreen === 'favorites' && styles.favoritesContainer]}>
@@ -100,6 +183,20 @@ const QuoteGenerator = () => {
               <Icon name="funnel" size={18} color="#FFFFFF" />
               <Text style={styles.actionButtonText}>
                 {selectedTags.length > 0 ? `Filter (${selectedTags.length})` : 'Filter'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                sourceInfo.activeMode === 'custom' && styles.actionButtonCustomSource,
+              ]}
+              onPress={() => setShowDataSourceSettings(true)}
+              activeOpacity={0.8}
+            >
+              <Icon name="server-outline" size={18} color="#FFFFFF" />
+              <Text style={styles.actionButtonText}>
+                {sourceInfo.activeMode === 'custom' ? 'Source: API' : 'Source'}
               </Text>
             </TouchableOpacity>
 
@@ -136,6 +233,16 @@ const QuoteGenerator = () => {
             onClose={() => setShowCategoryFilter(false)}
             selectedTags={selectedTags}
             onTagsChange={setSelectedTags}
+            datasetVersion={datasetVersion}
+          />
+
+          <DataSourceSettings
+            visible={showDataSourceSettings}
+            onClose={() => setShowDataSourceSettings(false)}
+            sourceInfo={sourceInfo}
+            onApplyEndpoint={handleApplyEndpoint}
+            onRefresh={handleRefreshSource}
+            onUseBuiltIn={handleUseBuiltInSource}
           />
         </>
       )}
@@ -192,6 +299,10 @@ const styles = StyleSheet.create({
   actionButtonActive: {
     backgroundColor: 'rgba(0, 122, 255, 0.8)',
     borderColor: 'rgba(0, 122, 255, 0.9)',
+  },
+  actionButtonCustomSource: {
+    backgroundColor: 'rgba(16, 185, 129, 0.85)',
+    borderColor: 'rgba(16, 185, 129, 0.95)',
   },
   actionButtonText: {
     color: '#FFFFFF',

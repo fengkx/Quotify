@@ -6,25 +6,26 @@ import {
   FlatList,
   TouchableOpacity,
   Modal,
-  Dimensions,
   Platform,
   SafeAreaView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import QuoteService from '../services/QuoteService';
 
-const { width, height } = Dimensions.get('window');
-
-const CategoryFilter = ({ visible, onClose, selectedTags, onTagsChange }) => {
+const CategoryFilter = ({ visible, onClose, selectedTags, onTagsChange, datasetVersion = 0 }) => {
   const [tags, setTags] = useState([]);
   const [selectedTagsLocal, setSelectedTagsLocal] = useState(selectedTags || []);
 
   useEffect(() => {
+    if (!visible) {
+      return;
+    }
+
     const allTags = QuoteService.getTagsWithCount();
     // Filter out empty tags and limit to most popular tags
     const popularTags = allTags.filter(({ tag, count }) => tag && count >= 5).slice(0, 20);
     setTags(popularTags);
-  }, []);
+  }, [visible, datasetVersion]);
 
   useEffect(() => {
     setSelectedTagsLocal(selectedTags || []);

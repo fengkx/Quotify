@@ -1,0 +1,79 @@
+name: Android Debug APK Artifact
+
+on:
+  push:
+    branches:
+      - '**'
+  workflow_dispatch:
+  pull_request:
+
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-debug-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CI: true
+      BUILD_REF_NAME: ${{ github.ref_name }}
+      BUILD_SHA: ${{ github.sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Make Gradle executable
+        run: chmod +x android/gradlew
+
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew --no-daemon clean assembleDebug
+
+      - name: Collect debug assets
+        id: assets
+        shell: bash
+        run: |
+          mkdir -p release-assets
+          shopt -s nullglob
+          apk_found=0
+          short_sha="${BUILD_SHA::7}"
+          safe_ref="$(echo "${BUILD_REF_NAME}" | tr '/ ' '--')"
+          for apk in android/app/build/outputs/apk/debug/*.apk; do
+            cp "$apk" "release-assets/$(basename "$apk" .apk)-${safe_ref}-${short_sha}.apk"
+            apk_found=1
+          done
+          if [[ "$apk_found" -ne 1 ]]; then
+            echo "::error::No APK files found in android/app/build/outputs/apk/debug"
+            exit 1
+          fi
+
+          ls -lh release-assets
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-apk-${{ github.run_number }}-${{ github.sha }}
+          path: release-assets/*
+          if-no-files-found: error
