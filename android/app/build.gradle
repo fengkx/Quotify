@@ -128,6 +128,12 @@ android {
         debug {
             signingConfig signingConfigs.debug
         }
+        ci {
+            initWith release
+            signingConfig signingConfigs.debug
+            debuggable false
+            matchingFallbacks = ['release']
+        }
         release {
             signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
@@ -170,5 +176,4 @@ dependencies {
         implementation jscFlavor
     }
 }
-
 

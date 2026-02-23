@@ -1,4 +1,4 @@
-name: Android Debug APK Artifact
+name: Android CI APK Artifact
 
 on:
   push:
@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-debug-apk:
+  build-ci-apk:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -47,11 +47,11 @@ jobs:
       - name: Make Gradle executable
         run: chmod +x android/gradlew
 
-      - name: Build debug APK
+      - name: Build CI APK (standalone)
         working-directory: android
-        run: ./gradlew --no-daemon clean assembleDebug
+        run: ./gradlew --no-daemon clean assembleCi
 
-      - name: Collect debug assets
+      - name: Collect CI APK assets
         id: assets
         shell: bash
         run: |
@@ -60,20 +60,48 @@ jobs:
           apk_found=0
           short_sha="${BUILD_SHA::7}"
           safe_ref="$(echo "${BUILD_REF_NAME}" | tr '/ ' '--')"
-          for apk in android/app/build/outputs/apk/debug/*.apk; do
+          for apk in android/app/build/outputs/apk/ci/*.apk; do
             cp "$apk" "release-assets/$(basename "$apk" .apk)-${safe_ref}-${short_sha}.apk"
             apk_found=1
           done
           if [[ "$apk_found" -ne 1 ]]; then
-            echo "::error::No APK files found in android/app/build/outputs/apk/debug"
+            echo "::error::No APK files found in android/app/build/outputs/apk/ci"
             exit 1
           fi
 
+          {
+            echo "artifact_name=android-ci-apk-${GITHUB_RUN_NUMBER}-${BUILD_SHA}"
+            echo "artifact_path=release-assets"
+          } >> "$GITHUB_OUTPUT"
+
           ls -lh release-assets
+
+      - name: Write job summary
+        shell: bash
+        run: |
+          {
+            echo "## Android CI APK Artifact (Standalone)"
+            echo
+            echo "- Artifact name: \`${{ steps.assets.outputs.artifact_name }}\`"
+            echo "- Commit: \`${BUILD_SHA}\`"
+            echo "- Ref: \`${BUILD_REF_NAME}\`"
+            echo "- Runtime: Standalone APK (No Metro required)"
+            echo
+            echo "### Files"
+            echo
+            for file in release-assets/*; do
+              if [[ -f "$file" ]]; then
+                size="$(du -h "$file" | cut -f1)"
+                echo "- \`$(basename "$file")\` (${size})"
+              fi
+            done
+            echo
+            echo "> Download from the **Artifacts** section in this workflow run page."
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload workflow artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: android-debug-apk-${{ github.run_number }}-${{ github.sha }}
+          name: ${{ steps.assets.outputs.artifact_name }}
           path: release-assets/*
           if-no-files-found: error
