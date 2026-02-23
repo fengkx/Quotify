@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Material You-ish fallback palette for pre-Android 12 -->
+    <color name="widget_surface">#E6F3F4F6</color>
+    <color name="widget_surface_overlay">#26FFFFFF</color>
+    <color name="widget_outline">#33FFFFFF</color>
+    <color name="widget_outline_inner">#14FFFFFF</color>
+    <color name="widget_highlight_top">#5CFFFFFF</color>
+    <color name="widget_highlight_bottom">#00FFFFFF</color>
+    <color name="widget_ambient_bottom_shade">#12000000</color>
+    <color name="widget_ambient_edge_shade">#0A000000</color>
+
+    <color name="widget_on_surface">#FF111418</color>
+    <color name="widget_on_surface_variant">#CC1F2937</color>
+    <color name="widget_text_shadow">#26FFFFFF</color>
+
+    <color name="widget_button_container">#E6DCEBFF</color>
+    <color name="widget_button_container_overlay">#1FFFFFFF</color>
+    <color name="widget_button_outline">#40FFFFFF</color>
+    <color name="widget_button_outline_inner">#1AFFFFFF</color>
+    <color name="widget_button_on_container">#FF12325B</color>
+    <color name="widget_button_pressed_scrim">#12000000</color>
+</resources>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Material You-style filled tonal pill -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/widget_button_container" />
+            <corners android:radius="14dp" />
+            <stroke
+                android:width="1dp"
+                android:color="@color/widget_button_outline" />
+        </shape>
+    </item>
+
+    <!-- Soft top sheen -->
+    <item android:left="1dp" android:top="1dp" android:right="1dp" android:bottom="8dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="270"
+                android:startColor="@color/widget_button_container_overlay"
+                android:endColor="@android:color/transparent" />
+            <corners android:radius="13dp" />
+        </shape>
+    </item>
+
+    <!-- Inner edge -->
+    <item android:left="1dp" android:top="1dp" android:right="1dp" android:bottom="1dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent" />
+            <corners android:radius="13dp" />
+            <stroke
+                android:width="1dp"
+                android:color="@color/widget_button_outline_inner" />
+        </shape>
+    </item>
+
+</layer-list>
