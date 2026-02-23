@@ -3,45 +3,134 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp"
+    android:padding="18dp"
     android:background="@drawable/widget_background"
-    android:gravity="center">
+    android:gravity="center_horizontal">
 
-    <TextView
-        android:id="@+id/widget_quote_text"
+    <LinearLayout
+        android:id="@+id/widget_content_container"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Loading inspiration..."
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        android:fontFamily="sans-serif-medium"
-        android:gravity="center"
-        android:layout_marginBottom="12dp"
-        android:lineSpacingExtra="4dp" />
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center_vertical">
 
-    <TextView
-        android:id="@+id/widget_author_text"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Quotify"
-        android:textColor="#E0E0E0"
-        android:textSize="14sp"
-        android:fontFamily="sans-serif-light"
-        android:gravity="center"
-        android:layout_marginBottom="8dp"
-        android:textStyle="italic" />
+        <TextView
+            android:id="@+id/widget_quote_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Loading inspiration..."
+            android:textColor="@color/widget_on_surface"
+            android:textSize="16sp"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="start"
+            android:layout_marginBottom="14dp"
+            android:lineSpacingExtra="5dp"
+            android:maxLines="7"
+            android:ellipsize="end"
+            android:shadowColor="@color/widget_text_shadow"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="1.5" />
 
-    <TextView
-        android:id="@+id/widget_refresh_button"
+        <TextView
+            android:id="@+id/widget_author_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Quotify"
+            android:textColor="@color/widget_on_surface_variant"
+            android:textSize="14sp"
+            android:fontFamily="sans-serif-light"
+            android:gravity="center"
+            android:layout_marginBottom="14dp"
+            android:maxLines="2"
+            android:textStyle="italic"
+            android:shadowColor="@color/widget_text_shadow"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="1" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/widget_button_row"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="↻ Refresh"
-        android:textColor="#FFFFFF"
-        android:textSize="12sp"
-        android:fontFamily="sans-serif"
+        android:layout_marginTop="4dp"
         android:gravity="center"
-        android:padding="8dp"
-        android:background="@drawable/widget_button_background"
-        android:clickable="true" />
+        android:orientation="horizontal">
 
-</LinearLayout> 
+        <TextView
+            android:id="@+id/widget_refresh_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="92dp"
+            android:minHeight="40dp"
+            android:text="↻ Refresh"
+            android:textColor="@color/widget_button_on_container"
+            android:textSize="12sp"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"
+            android:paddingLeft="14dp"
+            android:paddingRight="14dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:background="@drawable/widget_button_background"
+            android:clickable="true" />
+
+        <TextView
+            android:id="@+id/widget_prev_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="56dp"
+            android:minHeight="40dp"
+            android:layout_marginLeft="8dp"
+            android:text="◀"
+            android:textColor="@color/widget_button_on_container"
+            android:textSize="12sp"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:background="@drawable/widget_button_background"
+            android:clickable="true"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/widget_page_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="44dp"
+            android:layout_marginLeft="6dp"
+            android:layout_marginRight="6dp"
+            android:textColor="@color/widget_on_surface_variant"
+            android:textSize="12sp"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"
+            android:text="1/1"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/widget_next_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="56dp"
+            android:minHeight="40dp"
+            android:text="▶"
+            android:textColor="@color/widget_button_on_container"
+            android:textSize="12sp"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:background="@drawable/widget_button_background"
+            android:clickable="true"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+</LinearLayout>

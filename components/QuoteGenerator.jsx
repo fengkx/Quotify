@@ -4,6 +4,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  Linking,
   StatusBar,
   TouchableOpacity,
   Text,
@@ -29,6 +30,19 @@ const QuoteGenerator = () => {
   const [datasetVersion, setDatasetVersion] = useState(0);
   const [sourceInfo, setSourceInfo] = useState(QuoteService.getSourceInfo());
   const hasHandledSelectedTagsEffect = useRef(false);
+  const hasAppliedWidgetLaunchQuote = useRef(false);
+
+  const applyWidgetOpenQuote = useCallback((widgetQuote) => {
+    if (!widgetQuote?.content || !widgetQuote?.author) {
+      return false;
+    }
+
+    setQuote(widgetQuote.content);
+    setAuthor(widgetQuote.author);
+    setQuoteTags([]);
+    setLoading(false);
+    return true;
+  }, []);
 
   const reconcileSelectedTags = (candidateTags = selectedTags) => {
     const availableTags = new Set(QuoteService.getAllTags());
@@ -124,6 +138,12 @@ const QuoteGenerator = () => {
 
         setSourceInfo(QuoteService.getSourceInfo());
         setDatasetVersion(prev => prev + 1);
+        const widgetLaunchQuote = await WidgetService.getInitialWidgetOpenQuote();
+        if (widgetLaunchQuote && applyWidgetOpenQuote(widgetLaunchQuote)) {
+          hasAppliedWidgetLaunchQuote.current = true;
+          return;
+        }
+
         fetchRandomQuote([]);
       }
     };
@@ -146,13 +166,25 @@ const QuoteGenerator = () => {
 
     initialize();
 
+    const linkSubscription = Linking.addEventListener('url', async ({ url }) => {
+      if (!WidgetService.isWidgetOpenUrl(url)) {
+        return;
+      }
+
+      const widgetQuote = await WidgetService.getCurrentWidgetQuote();
+      if (widgetQuote) {
+        applyWidgetOpenQuote(widgetQuote);
+      }
+    });
+
     return () => {
       mounted = false;
+      linkSubscription?.remove?.();
       if (unsubscribe) {
         unsubscribe();
       }
     };
-  }, [fetchRandomQuote]);
+  }, [applyWidgetOpenQuote, fetchRandomQuote]);
 
   useEffect(() => {
     // Skip first render; initial quote load is handled by initialize().

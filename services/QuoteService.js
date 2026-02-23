@@ -556,6 +556,26 @@ class QuoteService {
   static getMetadata() {
     return this.metadata;
   }
+
+  static getWidgetQuoteDataset(maxCount = 500) {
+    if (!Array.isArray(this.quotes) || this.quotes.length === 0) {
+      return [];
+    }
+
+    const limitedQuotes = this.quotes.slice(0, maxCount);
+    return limitedQuotes
+      .map(quote => ({
+        content: quote?.content,
+        author: quote?.author,
+      }))
+      .filter(
+        quote =>
+          typeof quote.content === 'string' &&
+          quote.content.trim() &&
+          typeof quote.author === 'string' &&
+          quote.author.trim(),
+      );
+  }
 }
 
 export default QuoteService;
